@@ -1,20 +1,31 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import joblib 
+import joblib
 
+class FuelInput(BaseModel):
+    engine_size: float
+    cylinders: int
 
-class inputs(BaseModel):
-    input1: float
-    input2: float
+app = FastAPI()
+
+try:
+    model = joblib.load('models/fuel_consumption_model.pkl')
+except:
+    model = None
+
+@app.get("/")
+def home():
+    return {"message": "Fuel Consumption API is running"}
+
+@app.post("/predict")
+def predict(data: FuelInput):
+    if model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
     
-model = joblib.load('models/fuel_consumption_model.pkl')
-
-app = FastAPI() 
-
-@app.post('/predict/')
-def predict(data : inputs):
-    input_values = [[data.input1, data.input2]]
+    if data.engine_size <= 0 or data.cylinders <= 0:
+        raise HTTPException(status_code=400, detail="Invalid input values")
     
-    
+    input_values = [[data.engine_size, data.cylinders]]
     prediction = model.predict(input_values)
-    return {'prediction': prediction[0]}
+    
+    return {"prediction": float(prediction[0])}
