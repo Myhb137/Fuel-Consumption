@@ -1,16 +1,21 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import joblib
+import os
 
 class FuelInput(BaseModel):
     engine_size: float
     cylinders: int
 
-app = FastAPI()
+app = FastAPI(title="Fuel Consumption Prediction API", version="1.0.0")
 
+# Load model with better error handling
 try:
-    model = joblib.load('models/fuel_consumption_model.pkl')
-except:
+    model_path = os.path.join('models', 'fuel_consumption_model.pkl')
+    model = joblib.load(model_path)
+    print("Model loaded successfully")
+except Exception as e:
+    print(f"Error loading model: {e}")
     model = None
 
 @app.get("/")
